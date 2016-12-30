@@ -1,0 +1,12 @@
+<select id="{{ name }}" name="{{ name }}" class="input-big form-control">
+    <option>Select {{ name }}</option>
+    {% for Entity in Entities %}
+    <option value="{{ Entity.getId }}" name="{{Entity.getName}}">{{Entity.getName  }}</option>
+    {% endfor %}
+</select>
+
+
+
+
+
+

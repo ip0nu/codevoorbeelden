@@ -1,0 +1,67 @@
+#src/Core/Resources/config/doctrine/User.orm.yml
+CoreBundle\Entity\User:
+    type: entity
+    table: core_user
+    id:
+      id:
+        type: integer
+        generator: { strategy: AUTO }
+    fields:
+      uniqueProfileGuid:
+        type: string
+        length: 255
+        unique: false
+        nullable: true
+    attributeOverride:
+      username:
+        nullable: true
+      email:
+        nullable: true
+      enabled:
+        default: 1
+      salt:
+        nullable: true
+      password:
+        nullable: true
+#      locked:
+#        default: 0
+#      expired:
+#        default: 0
+#      credentialsExpired:
+#        default: 0
+      usernameCanonical:
+        unique: false
+        nullable: true
+      emailCanonical:
+        unique: false
+        nullable: true
+      confirmationToken:
+        unique: false
+        nullable: true
+
+    oneToMany:
+      parents:
+        targetEntity: UserRelation
+        mappedBy: parent
+        cascade: ["persist"]
+      childs:
+        targetEntity: UserRelation
+        mappedBy: child
+        cascade: ["persist"]
+      configurations:
+        targetEntity: Configuration
+        mappedBy: user
+        cascade: ["persist"]
+    manyToMany:
+      applications:
+        targetEntity: Application
+        inversedBy: users
+        cascade: ["persist"]
+        joinTable:
+          name: core_application_user
+          joinColumns:
+            user_id:
+              referencedColumnName: id
+          inverseJoinColumns:
+            application_id:
+              referencedColumnName: id

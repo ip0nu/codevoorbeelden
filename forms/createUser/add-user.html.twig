@@ -1,0 +1,205 @@
+{% extends 'AtpiManagementBundle::navigation.html.twig' %}
+{% block body %}
+
+    {% set Route = app.request.attributes.get('_route') %}
+ {% if  Route == 'atpi_management_adduser' %}
+     {% set backRoute = 'atpi_management_users' %}
+ {% elseif Route == 'atpi_management_group_adduser' %}
+     {% set backRoute = 'atpi_management_groupusers'  %}
+{% endif %}
+
+    <form class="form-horizontal" method="post">
+        <input type="hidden" name="add" value="1"/>
+        <fieldset>
+            <legend>{{ 'add_user'|trans({}, 'admin')|capitalize }}</legend>
+            <div class="form-group">
+                <label for="inputEmail" class="col-lg-2 control-label">{{ 'username'|trans({}, 'admin')|capitalize }}</label>
+                <div class="col-lg-5">
+                    <input class="form-control" id="inputEmail" placeholder="{{ 'username'|trans({}, 'admin')|capitalize }}" name="username" type="text" value="{{ app.request.get('username')|e }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputEmail" class="col-lg-2 control-label">{{ 'emailaddress'|trans({}, 'admin')|capitalize }}</label>
+                <div class="col-lg-5">
+                    <input class="form-control" id="inputEmail" placeholder="{{ 'emailaddress'|trans({}, 'admin')|capitalize }}" name="emailaddress" type="text" value="{{ app.request.get('emailaddress')|e }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputPassword" class="col-lg-2 control-label">{{ 'password'|trans({}, 'admin')|capitalize }}</label>
+                <div class="col-lg-5">
+                    <input class="form-control" id="inputPassword" placeholder="{{ 'password'|trans({}, 'admin')|capitalize }}" name="password" type="text" value="{{ app.request.get('password')|e }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputMessageRights" class="col-lg-2 control-label">{{ 'message_rights'|trans({}, 'admin')|capitalize }}</label>
+                <div class="col-lg-5">
+                   mail: <input class="form-inline" name="mailRights" type="checkbox" >
+                   sms: <input class="form-inline"  name="smsRights" type="checkbox" >
+                </div>
+            </div>
+            {% if roles is defined %}
+            <div class="form-group">
+                <label for="select" class="col-lg-2 control-label">{{ 'role'|trans({}, 'admin')|capitalize }}</label>
+                <div class="col-lg-5">
+                    <select class="form-control" id="roles" name="roles[]">
+                        <option value="0">---{{ 'no_role'|trans({}, 'admin')|capitalize }}---</option>
+                        {% for role in roles %}
+                            <option value="{{ role.id }}" {% if app.request.get('role')==role.id %}SELECTED{% endif %}>{{ role.name|e }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endif %}
+            {% if groups is defined %}
+                <div class="form-group">
+                    <label for="select" class="col-lg-2 control-label">{{ 'group'|trans({}, 'admin')|capitalize }}</label>
+                    <div class="col-lg-5">
+                        <select class="form-control" id="groups" name="groups[]">
+                            <option value="0">---{{ 'no_group'|trans({}, 'admin')|capitalize }}---</option>
+                            {% for group1 in groups %}
+                                <option value="{{ group1.id }}"{% if groupIsset == '1' %} {% if group1.id == group.id %}SELECTED{% endif %}{% endif %}>{{ group1.fullPath|e }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% endif %}
+            {% if MidOfficeIDs is defined %}
+                <div class="form-MidOfficeID form-group">
+                    <label for="select" class="col-lg-2 control-label">{{ 'MidOfficeID'|trans({}, 'admin')|capitalize }}</label>
+                    <div class="col-lg-5">
+                        <select class="form-control" id="midOfficeIDs" onchange="GetAccountCodes()" name="midOfficeIDs[]">
+                            <option value="">---{{ 'no_MidOfficeID'|trans({}, 'admin')|capitalize }}---</option>
+                            {% for MidOfficeID in MidOfficeIDs %}
+                                <option value="{{ MidOfficeID.id }}">{{ MidOfficeID.name|e }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="form-accountCode" id="form-accountCode" hidden >
+                <div class="form-group">
+                    <label for="select" class="col-lg-2 control-label">{{ 'AccountCode_filter'|trans({}, 'admin')|capitalize }}</label>
+                    <div class="col-lg-5">
+                        <input class="form-control" id="accountCodeSearche" oninput="GetAccountCodes()" placeholder="{{ 'fill_the_accountcode_in_you_want'|trans({}, 'admin')|capitalize }}" name="accountCodeSearche" type="text">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="select" class="col-lg-2 control-label">{{ 'AccountCode_picker'|trans({}, 'admin')|capitalize }}</label>
+                    <div class="col-lg-5">
+                        <select class="form-control" onchange="showSelection(this.id)" name="accountCodePicker" id="accountCodePicker">
+                            <option>---{{ 'add_an_accountCode'|trans({}, 'admin')|capitalize }}---</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="select" class="col-lg-2 control-label">{{ 'AccountCode_selection'|trans({}, 'admin')|capitalize }}</label>
+                    <div class="col-lg-5" >
+                      <select class="form-control" id="accountCodes" onclick="manageSelectboxAccountCodeSelection(this.id)" multiple name="accountCodes[]">
+
+                      </select>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group" >
+                <div class="col-lg-10 col-lg-offset-2">
+
+                    <a href="{{ path (backRoute,app.request.attributes.get('_route_params'))}}" class="btn btn-default">{{ 'cancel'|trans({}, 'admin')|capitalize }}</a>
+                    <button type="submit" name="submit" class="btn btn-primary">{{ 'add_user'|trans({}, 'admin')|capitalize }}</button>
+                </div>
+            </div>
+        </fieldset>
+    </form>
+
+    <script type="text/javascript">
+
+        document.querySelector('form').onkeypress = checkEnter;
+        function checkEnter(e){
+            e = e || event;
+            var txtArea = /textarea/i.test((e.target || e.srcElement).tagName);
+            return txtArea || (e.keyCode || e.which || e.charCode || 0) !== 13;
+        }
+
+        function GetAccountCodes(){
+
+            $('#form-accountCode').show();
+            var midOfficeIDs = $('#midOfficeIDs').val()
+            var searchString = $('#accountCodeSearche').val()
+            window.request =  $.ajax({
+                url:  '{{ path('atpi_management_get_accountCode_by_midOfficeID_Ajax') }}'
+                ,method: 'POST'
+                ,dataType: 'json'
+                ,data: {'midOfficeIDs':midOfficeIDs, 'searchString':searchString}
+                ,success: function(response) {
+                    window.accountcodes = response;
+                    manageSelectboxAccountCodeSearche()
+                }
+            })
+        };
+
+        function manageSelectboxAccountCodeSearche() {
+
+            var midOfficeID = document.getElementById('midOfficeIDs').value;
+            var selectbox = document.getElementById('accountCodePicker');
+            while( selectbox.hasChildNodes()){
+                selectbox.removeChild(selectbox.lastChild);
+            }
+            var results = window.accountcodes; //filterArray( window.accountcodes, searchValue )
+
+            var text = '---{{ 'add_an_accountCode'|trans({}, 'admin')|capitalize }}---';
+            var option = document.createElement("option");
+            option.text = text;
+            option.value = '';
+            selectbox.add(option);
+
+            for (var index = 0; index < results.length; ++index) {
+                var strip = ""
+                var x = 70-results[index].name.length;
+
+                for(var count = 0; count <= x ; ++count ){strip=strip+".";}
+
+                var text = results[index].accountcode + " - "+ results[index].name;
+                var option = document.createElement("option");
+                option.text = text;
+                option.value = results[index].id;
+                selectbox.add(option);
+            }
+
+        };
+
+        function showSelection(elementId) {
+            var elt = document.getElementById(elementId);
+            var select = document.getElementById("accountCodes");
+            var double = 1;
+
+            if(elt.value) {
+                if (typeof select.options != 'undefined') {
+                    for (var i = 0; i <  select.childNodes.length; i++) {
+                   // select.childNodes.forEach(function (option) {
+                        if (typeof select.childNodes[i] != 'undefined') {
+                            if (select.childNodes[i] == elt.options[elt.selectedIndex].value) {
+                                double = 0;
+                            }
+                        }
+                    };
+                    if (double != 0) {
+
+                        var option = document.createElement("option");
+                        option.text = elt.options[elt.selectedIndex].text;
+                        option.value = elt.options[elt.selectedIndex].value;
+                        option.selected = true;
+                        select.add(option);
+                    }
+                }
+            }
+        };
+
+        function manageSelectboxAccountCodeSelection(elementId) {
+            var selectBox = document.getElementById(elementId);
+            selectBox.remove(selectBox.selectedIndex);
+            for (var i = 0; i < selectBox.options.length; i++) {
+                selectBox.options[i].selected = true;
+            }
+        };
+
+    </script>
+{% endblock %}

@@ -1,0 +1,595 @@
+<div id="email" class="message" >
+    <div class="k-window-titlebar k-header">
+    <span class="k-window-title">E-mail</span>
+</div>
+
+<div class="container">
+    <fieldset>
+        <ul>
+            <li class="note">
+                Note: Fields marked by an asterisk (*) are required.
+            </li>
+            <li>
+                <label>{{ 'message.email.templatename'|trans({}, 'ets') }}</label>
+                <select id="emailTemplates"></select>
+            </li>
+            <li>
+                <label>{{ 'message.email.to'|trans({}, 'ets') }}<span>*</span></label>
+                <input type="text" id="emailTo"  />
+            </li>              
+            <li>
+                <label>{{ 'message.email.subject'|trans({}, 'ets') }}<span>*</span></label>
+                <input type="text" id="emailSubject" />
+            </li>
+            <li>
+                <label>{{ 'message.email.text'|trans({}, 'ets') }}<span>*</span></label>
+                <textarea id="emailText"></textarea>
+            </li>
+            <li class="characters">
+                &nbsp;
+            </li>
+        </ul>     
+    </fieldset>
+</div>
+<div id="toolbar">
+    <div class="excel">
+        <button id="saveEmailTemplate" class="k-ets-bigbtn">{{ 'save.email.template'|trans({}, 'ets')|capitalize }}<div class="k-ets-exportexcel-devider-black"></div><div class="k-ets-exportexcel-devider-white"></div></button>
+        <button id="sendEmail" class="k-ets-exportexcel">{{ 'send.message'|trans({}, 'ets')|capitalize }}<div class="k-ets-exportexcel-devider-black"></div><div class="k-ets-exportexcel-devider-white"></div></button>
+        <button id="deleteEmailTemplate" class="k-ets-smallbtn">{{ 'delete.template'|trans({}, 'ets')|capitalize }}</button>    
+    </div>
+</div>
+</div>
+<div class="message" id="sms">
+	<div class="k-window-titlebar k-header">
+		<span class="k-window-title">SMS</span>
+	</div>
+    
+    <div class="container">
+	    <fieldset>
+	        <ul>
+	        	<li class="note">
+	        		Note: Fields marked by an asterisk (*) are required.
+	        	</li>
+	        	<li>
+		            <label>{{ 'message.sms.templatename'|trans({}, 'ets') }}</label>
+		            <select id="smsTemplates"></select>
+		        </li>
+		        <li>
+		            <label>{{ 'message.sms.to'|trans({}, 'ets') }}<span>*</span></label>
+		            <input type="text" id="smsTo" />
+		        </li>              
+		        <li>
+		            <label>{{ 'message.sms.subject'|trans({}, 'ets') }}<span>*</span></label>
+		            <input type="text" id="smsSubject" />
+		        </li>
+		        <li>
+		            <label>{{ 'message.sms.text'|trans({}, 'ets') }}<span>*</span></label>
+		            <textarea maxlength="160" id="smsText" oninput="FormController.countChar(this)"></textarea>
+		        </li>
+		        <li class="characters">
+		            Characters <span id="charNum">160/160</span>
+		        </li>
+	        </ul>     
+	    </fieldset>
+	</div>
+    <div id="toolbar">
+    	<div class="excel">
+		    <button id="saveSmsTemplate" class="k-ets-bigbtn">{{ 'save.sms.template'|trans({}, 'ets')|capitalize }}<div class="k-ets-exportexcel-devider-black"></div><div class="k-ets-exportexcel-devider-white"></div></button>
+		    <button id="sendSms" class="k-ets-exportexcel">{{ 'send.message'|trans({}, 'ets')|capitalize }}<div class="k-ets-exportexcel-devider-black"></div><div class="k-ets-exportexcel-devider-white"></div></button>
+		    <button id="deleteSmsTemplate" class="k-ets-smallbtn">{{ 'delete.template'|trans({}, 'ets')|capitalize }}</button>
+		</div>
+	</div>
+</div>
+<div class="message" id="messageLog">
+	<div class="k-window-titlebar k-header">
+		<span class="k-window-title">Message Log</span>
+	</div>
+	<div id="messageGrid"></div>
+</div>   
+
+
+<script>
+  
+    var mailGrid;
+    var selectedPerson;
+    var notification;
+    var checkedIds = {};
+    var promises = [
+        $.Deferred(),
+        $.Deferred()
+    ];
+    
+FormController = {
+    //function that checks and unchecks the boxes and includes or excludes the email adres or phone number in the sendto input box or
+    //also puts al the checked boxes in an array (checkedIds) so they are remembered when you brows tro th grid.
+    checkUncheck: function(data,id,type) {
+        var e = document.getElementById(type).value;
+        if($('#'+id).prop('checked')){
+                if(e === ''){
+                    var b = data + ';';
+                } else {
+                    var b = e + data + ';';
+                }
+
+            checkedIds[id] = 'checked';
+            var checkboxes = document.getElementsByName(id);
+            for (var i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].checked = true;
+            }
+            document.getElementById(type).value = b;   
+
+        } else {
+            e =  e.replace(data + ';','');
+            if(e === ';') {e='';}
+            checkedIds[id] = 'unchecked';
+            var checkboxes = document.getElementsByName(id);
+
+            for (var i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].checked = false;
+            }
+            document.getElementById(type).value = e;   
+
+        }
+    },
+    //fills the select boxes with the nessesary template choices
+    fillTemplate: function() {
+        var emailSelect = document.getElementById("emailTemplates");
+        var smsSelect = document.getElementById("smsTemplates");
+        emailSelect.innerHTML = '';
+        smsSelect.innerHTML = '';     
+        var select = document.createElement("option");
+        select.textContent =  'select' ;
+        emailSelect.appendChild(select);
+        var select = document.createElement("option");
+        select.textContent =  'select' ;
+        smsSelect.appendChild(select);
+
+        var path = '/en_GB/ets/list_Template?userId=' + window.userId;
+        $.ajax({
+            url: path,
+            type: 'GET',
+            success: function (result) {
+                result = JSON.parse(result);
+                window.Options = result;
+
+                for(var i = 0; i < window.Options.length; i++) {
+                    if(window.Options[i]['m_type'] === 'email') {
+                        var el = document.createElement("option");
+                        el.textContent =  window.Options[i]['m_name'] ;
+                        el.value =  window.Options[i]['m_id'];
+                        emailSelect.appendChild(el);
+                    }
+                    if(window.Options[i]['m_type'] === 'sms') {
+                        var el = document.createElement("option");
+                        el.textContent =  window.Options[i]['m_name'] ;
+                        el.value =  window.Options[i]['m_id'];
+                        smsSelect.appendChild(el);
+                    }
+                }    
+            },
+            error: function () {
+            }
+        });
+    },
+    // keeps track how much chars ar filled in the sms texterea
+    countChar: function(val){
+        var len = val.value.length;
+        $('#charNum').html( 160 - len + '/160');
+    },
+    // checks if the email and/or sms module should me rendered (rights are set in ../toolbar/userinfo.html)
+    checkMessageRights: function() {
+        if(window.userEmailRights !== '1' && window.userSmsRights !=='1'){
+            document.getElementById('messageLog').innerHTML = '';
+        }
+        if(window.userEmailRights !== '1') {
+            document.getElementById('email').innerHTML  = '';
+        }
+        if(window.userSmsRights !== '1') {
+            document.getElementById('sms').innerHTML  = '';
+        }
+    },
+    // can be included to a grid and checkes if the record doesn't have email and phone. 
+    // if not give it a classe that makes the line red.(also depends on the rights)
+    // also keeps the checks from the checkboxes in check in check if you brows the grid.
+    dataBound: function (view, gridId) {
+        $('#subReportWindow').data("kendoWindow").center();
+        
+        var colorClass  = 'color-red';
+        var helper      = [] ;
+
+        for(var i = 0; i < view.length;i++) {
+            if(helper.indexOf(view[i].bookingId) === -1) {
+                var emailChecked =   (checkedIds['email' + view[i].bookingId] === "checked");
+                var smsChecked   =   (checkedIds['sms' + view[i].bookingId] === "checked");
+                var emailCheckboxes = document.getElementsByName('email' + view[i].bookingId);    
+                var smsCheckboxes = document.getElementsByName('sms' + view[i].bookingId);
+
+                for (var a = 0; a < emailCheckboxes.length; a++) {
+                    if(emailChecked) emailCheckboxes[a].checked = emailChecked;
+                    if(smsChecked) smsCheckboxes[a].checked = smsChecked;
+                }
+            }
+            helper[i] =  view[i].bookingId;
+        } 
+
+        var elem = gridId+ " tbody";
+        for (var i = 0; i < view.length; i++) {
+                if (((view[i]["phoneNumber"]=== "" && !window.userEmailRights) || (view[i]["emailAddress"] === "" && !window.userSmsRights) || (view[i]["emailAddress"] === "" && view[i]["phoneNumber"] === "" ))&& (window.userEmailRights || window.userSmsRights)) {
+                var row = $(elem).find("tr[data-uid='" + view[i].uid + "']");
+                row.find(".checkbox").prop('checked', false);
+                $.each(row.find('td'), function (index, element) {
+                    $(element).toggleClass(colorClass);
+                });                 
+            }
+        }
+    }, 
+    // handles the templates vor the sms and the email checkboxes    
+    template: function (dataItem, type) {
+        if((dataItem.emailAddress !== "" && window.userEmailRights === '1' && type ==='email') || 
+            (dataItem.phoneNumber !== "" && window.userSmsRights === '1' && type==='sms')) { 
+                var id = type + dataItem.bookingId;
+                if(type === 'email') {
+                    var data = dataItem.emailAddress;
+                }else{
+                    var data = dataItem.phoneNumber;
+                }
+                return '<div class="'+type+'Checkbox"><input type="checkbox" name="'+id+'" id="'+id+'" onchange="javascript:FormController.checkUncheck(\''+data+'\',\''+id+'\',\''+type+'To\');" class="checkbox"  /><label class="checkbox" for="'+id+'"><span class="checkbox"></span></label></div>';  
+        } else{
+                return '<div class="'+type+'Checkbox"><input type="checkbox" name="'+id+'" id="'+id+'" onchange="javascript:FormController.checkUncheck(\''+data+'\',\''+id+'\',\''+type+'To\');" class="checkbox" disabled  /><label class="checkbox" for="'+id+'"><span class="checkbox disabled"></span></label></div>';
+        }
+    }     
+}
+    $("#emailTemplates").change(function() {
+        for(var i = 0; i < window.Options.length; i++) {
+            if(window.Options[i]['m_id'] == document.getElementById('emailTemplates').value) {  
+                document.getElementById('emailSubject').value   =  window.Options[i]['m_name'] ;
+                document.getElementById('emailText').value  =  window.Options[i]['m_text'];
+            }
+        }    
+    });
+    $("#smsTemplates").change(function() {
+        for(var i = 0; i < window.Options.length; i++) {
+            if(window.Options[i]['m_id'] == document.getElementById('smsTemplates').value) {  
+                $('#charNum').html(  160 - window.Options[i]['m_text'].length + '/160');
+                document.getElementById('smsSubject').value   =  window.Options[i]['m_name'] ;
+                document.getElementById('smsText').value  =  window.Options[i]['m_text'];
+            }
+        }    
+    });  
+    $("#sendEmail").kendoButton({
+        enable: true,
+        imageUrl: "/bundles/atpiets/images/assets/send_mail.png",
+        click: function (e) {            
+	        window.emailTo = document.getElementById('emailTo').value;
+	        window.emailSubject = document.getElementById('emailSubject').value;
+	        window.emailText = document.getElementById('emailText').value;
+	     
+	        if( !window.emailTo  || !window.emailSubject || !window.emailText ) {
+	            notification.show({
+	                message: "Message not send"
+	            }, "send-error");
+	        } else {
+	            var path = '{{ path('atpi_ets_ajax_send_Email')}}?emailTo=' + window.emailTo + '&emailSubject=' +  window.emailSubject  + '&emailText=' +window.emailText +'&userId=' + window.userId;    
+	            $.ajax({
+	                url: path,
+	                type: 'GET',
+	                success: function () {
+						notification.show({
+			                message: "Message send"
+			            }, "send-success");
+                        $('#messageGrid').data('kendoGrid').dataSource.read();
+	                    $('#messageGrid').data('kendoGrid').refresh();
+	                },
+	                error: function () {
+	                	notification.show({
+			                message: "Message not send"
+			            }, "send-error");
+	                }
+	            });
+	        }
+		}
+    });
+    $("#sendSms").kendoButton({
+        enable: true,
+        imageUrl: "/bundles/atpiets/images/assets/send_sms.png",
+        click: function (e) {
+	        window.smsTo = document.getElementById('smsTo').value;  
+	        window.smsSubject = document.getElementById('smsSubject').value; 
+	        window.smsText = document.getElementById('smsText').value; 
+	   
+	        if( !window.smsTo || !window.smsText || !window.smsSubject) {
+	            notification.show({
+	                message: "Message not send"
+	            }, "send-error");
+	        } else {
+	            var path = '{{ path('atpi_ets_ajax_send_Sms')}}?smsTo=' + window.smsTo + '&smsSubject=' +  window.smsSubject  + '&smsText=' +window.smsText +'&userId=' + window.userId;    
+	            $.ajax({
+	                url: path,
+	                type: 'GET',
+	                success: function () {
+	                    notification.show({
+			                message: "Message send"
+			            }, "send-success");
+                        $('#messageGrid').data('kendoGrid').dataSource.read();
+	                    $('#messageGrid').data('kendoGrid').refresh();
+	                },
+	                error: function () {
+	                	
+	                }
+	            });
+	        }
+		}  
+    });
+    $("#saveEmailTemplate").kendoButton({
+        enable: true,
+        imageUrl: "/bundles/atpiets/images/assets/save_report.png",
+        click: function (e) {
+	        window.emailTo = document.getElementById('emailTo').value;  
+	        window.emailSubject = document.getElementById('emailSubject').value; 
+	        window.emailText = document.getElementById('emailText').value; 
+
+	        if( !window.emailSubject || !window.emailText ) {
+	            notification.show({
+	                message: "Template not saved"
+	            }, "save-error");
+	        } else {
+	            var path = '{{ path('atpi_ets_ajax_save_Email_Template')}}?emailTo=' + window.emailTo + '&emailSubject=' +  window.emailSubject  + '&emailText=' +window.emailText +'&userId=' + window.userId;    
+	            $.ajax({
+	                url: path,
+	                type: 'GET',
+	                success: function () {
+						notification.show({
+			                message: "Template saved"
+			            }, "save-success");
+	                    FormController.fillTemplate();
+	                },
+	                error: function () {
+	                	notification.show({
+			                message: "Template not saved"
+			            }, "save-error");
+	                }
+	            });
+	        }
+		}
+	});
+    $("#saveSmsTemplate").kendoButton({
+        enable: true,
+        imageUrl: "/bundles/atpiets/images/assets/save_report.png",
+        click: function (e) {
+	        window.smsTo = document.getElementById('smsTo').value;  
+	        window.smsSubject = document.getElementById('smsSubject').value; 
+	        window.smsText = document.getElementById('smsText').value;
+  
+	        if( !window.smsSubject || !window.smsText ) {
+	            notification.show({
+	                message: "Template not saved"
+	            }, "save-error");
+	        } else {
+	            var path = '{{ path('atpi_ets_ajax_save_Sms_Template')}}?smsSubject=' +  window.smsSubject  + '&smsText=' +window.smsText +'&userId=' + window.userId;    
+	            $.ajax({
+	                url: path,
+	                type: 'GET',
+	                success: function () {
+						notification.show({
+			                message: "Template saved"
+			            }, "save-success");
+	                    FormController.fillTemplate();
+	                },
+	                error: function () {
+	                	notification.show({
+			                message: "Template not saved"
+			            }, "save-error");
+	                }
+	            });
+	        }
+		}
+    });
+    $("#deleteEmailTemplate").kendoButton({
+        enable: true,
+        click: function () {
+	        var id      = document.getElementById('emailTemplates').value;
+	        
+	        if(id === 'select' ) {
+	        	notification.show({
+	                message: "Template not deleted"
+	            }, "delete-error");
+	        } else {
+	            var path = '{{ path('atpi_ets_ajax_delete_Template')}}?messageId=' + id;
+	            $.ajax({
+	                url: path,
+	                type: 'GET',
+	                success: function () {
+	                    notification.show({
+			                message: "Template deleted"
+			            }, "delete-success");                   
+	                    FormController.fillTemplate();
+	                },
+	                error: function () {
+	                   	notification.show({
+			                message: "Template not deleted"
+			            }, "delete-error");
+	                }
+	            });
+	        }
+	    }
+    });
+    $("#deleteSmsTemplate").kendoButton({
+        enable: true,
+        click: function () {
+	        var id      = document.getElementById('smsTemplates').value;
+	        
+	        if(id === 'select' ) {
+	        	notification.show({
+	                message: "Template not deleted"
+	            }, "delete-error");
+	        } else {
+	            var path = '{{ path('atpi_ets_ajax_delete_Template')}}?messageId=' + id;
+	            $.ajax({
+	                url: path,
+	                type: 'GET',
+	                success: function () {
+	                    notification.show({
+			                message: "Template deleted"
+			            }, "delete-success");                   
+	                    FormController.fillTemplate();
+	                },
+	                error: function () {
+	                   	notification.show({
+			                message: "Template not deleted"
+			            }, "delete-error");
+	                }
+	            });
+	        }
+	    }
+    });
+    $("#buttonExcel").kendoButton({
+
+        enable: true,
+        imageUrl: "/bundles/atpiets/images/assets/export_excel.png",
+        click: function (e) {
+
+            notification.show({
+                message: "Export Successful"
+            }, "upload-processing");
+            if(document.getElementById("grid")) {
+                $("#grid").data("kendoGrid").saveAsExcel();
+            }
+            if(document.getElementById("flightGrid")) {
+                $("#flightGrid").data("kendoGrid").saveAsExcel();
+            }
+            if(document.getElementById("hotelGrid")) {
+                $("#hotelGrid").data("kendoGrid").saveAsExcel();
+            }
+            if(document.getElementById("trainGrid")) {
+                $("#trainGrid").data("kendoGrid").saveAsExcel();
+            }
+            $.when.apply(null, promises)
+            .then(function(flightsWorkbook, hotelsWorkbook) {
+
+                // create a new workbook using the sheets of the products and orders workbooks
+                var sheets = [
+                    flightsWorkbook.sheets[0],
+                    hotelsWorkbook.sheets[0]
+                ];
+
+                sheets[0].title = "Flights";
+                sheets[1].title = "Hotels";
+
+                var workbook = new kendo.ooxml.Workbook({
+                    sheets: sheets
+                });
+
+                // save the new workbook,b
+                kendo.saveAs({
+                    dataURI: workbook.toDataURL(),
+                    fileName: "FlightsAndHotels.xlsx"
+                })
+            });
+        }
+    });
+    
+    $(document).ready(function () {
+    
+        FormController.fillTemplate();
+        FormController.checkMessageRights(); 
+           
+        mailGrid =  $("#messageGrid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                        read: {
+                            url:"{{ path('atpi_ets_ajax_list_messages') }}",
+                            data:{
+                                userId:window.userId
+                            }
+                      },
+                    root: "data",
+                },
+                pageSize: 10,
+                serverSorting: true,
+                schema: {
+                    data: function(response) {
+                        var json = $.parseJSON(response); 
+                        return json.data;
+                    },
+                    total: function(response) {
+                        var json = $.parseJSON(response); 
+                        return json.total;
+                    }                       
+                }
+            },
+            scrollable: false,
+            pageable: {
+                refresh: true,
+                pageSizes: false,
+                buttonCount: 3
+            },
+            columns: [
+                {
+                    field: "created",
+                    title: "{{ 'grid.date'|trans({}, 'ets') }}",
+                    width: 120
+                },
+                {
+                    field: "type",
+                    title: "{{ 'grid.type'|trans({}, 'ets') }}",
+                    width: 45
+                },
+                {
+                    field: "subject",
+                    title: "{{ 'grid.subject'|trans({}, 'ets') }}"
+                }
+            ]
+        });
+        notification = $("#notification").kendoNotification({
+            autoHideAfter: 3000,
+            stacking: "down",
+            show:function(e){
+                if (!$("." + e.sender._guid)[1]) {
+                    var element = e.element.parent(),
+                    eWidth = element.width(),
+                    eHeight = element.height(),
+                    wWidth = $(window).width(),
+                    wHeight = $(window).height(),
+                    newTop, newLeft;
+                    newLeft = Math.floor(wWidth / 2 - eWidth / 2);
+                    newTop = Math.floor(wHeight / 2 - eHeight / 2);
+                    $('#subReportWindow').parent().css({zIndex:10002});
+                    e.element.parent().css({top: newTop, left: newLeft});
+                }
+            },
+            templates: [{
+                type: "info",
+                template: $("#emailTemplate").html()
+            }, {
+                type: "error",
+                template: $("#errorTemplate").html()
+            }, {
+                type: "upload-success",
+                template: $("#successTemplate").html()
+            }, {
+            	type: "send-success",
+                template: $("#sendTemplate").html()
+            }, {
+            	type: "send-error",
+                template: $("#sendErrorTemplate").html()
+            }, {
+            	type: "save-success",
+                template: $("#saveTemplate").html()
+            }, {
+            	type: "save-error",
+                template: $("#saveErrorTemplate").html()
+            }, {
+            	type: "delete-success",
+                template: $("#deleteTemplate").html()
+            }, {
+            	type: "delete-error",
+                template: $("#deleteErrorTemplate").html()
+            }, {
+                type: "upload-processing",
+                template: $("#processingTemplate").html()
+            }]
+
+        }).data("kendoNotification");  
+    });
+</script>

@@ -1,0 +1,28 @@
+#src/Core/Resources/config/doctrine/Parameter.orm.yml
+CoreBundle\Entity\Parameter:
+    type: entity
+    table: core_parameter
+    id:
+      id:
+          type: integer
+          generator: { strategy: AUTO }
+    fields:
+      name:
+          type: string
+          length: 254
+      value:
+          type: text
+    oneToMany:
+      configurations:
+        targetEntity: Configuration
+        mappedBy: parameter
+        cascade: ["persist"]
+    manyToOne:
+      application:
+        targetEntity: Application
+        inversedBy: parameters
+        cascade: ["persist"]
+        joinColumn:
+          name: application_id
+          referencedColumnName: id
+

@@ -1,0 +1,115 @@
+   <div id="reportPopup">
+        <div id="grid"></div>
+        <div id="toolbar">
+			<div class="excel">
+	        	<button id="buttonExcel" class="k-ets-exportexcel">{{ 'export.button.excel'|trans({}, 'ets') }}<div class="k-ets-exportexcel-devider-black"></div><div class="k-ets-exportexcel-devider-white"></div></button>
+	        </div>
+		</div>
+    {% include 'AtpiEtsBundle:Report/includes:messageSystem.html.twig' %}    
+<script>       
+    
+    $(document).ready(function () {
+              
+        grid = $("#grid").kendoGrid({
+                excel:{
+                    allPages:true,
+                    fileName: "hotel-{{ "now"|date("d-m-Y") }}.xlsx"
+                },
+                excelExport: function(e) {
+                    notification.show({
+                                message: "Export Successful"
+                            },
+                            "upload-success"
+                    );
+                },
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: "{{ path('atpi_ets_report_data_hotelplan') }}" ,root: "data"
+                    },
+                    pageSize: 10
+                    ,serverPaging: true
+                    ,serverSorting: true
+                    ,schema: { data: 'data', total: 'total' }
+                    {% if sort %}
+                    ,sort: {
+                        field: "{{ sort.field }}",
+                        dir: "{{ sort.dir }}"
+                        {%  if sort.type is defined %}
+                            ,type: "{{ sort.type }}"
+                        {% endif %}
+                    }
+                    {% endif %}
+                },
+                groupable: false,
+                sortable: true,
+                scrollable: false,
+                pageable: {
+                    refresh: true,
+                    pageSizes: true,
+                    buttonCount: 5
+                },
+                dataBound:function(){
+                    var view = this.dataSource.view();
+                    FormController.dataBound(view,"#grid");
+                },
+                columns: [
+                    {
+                        template: function(dataItem) {
+                        result = FormController.template(dataItem, 'email');
+                        return result;
+                        },
+                        title:"{{ 'grid.mail'|trans({}, 'ets') }}",
+                        width: 50,
+                        hidden: !window.userEmailRights
+                    },
+                    {
+                       template: function(dataItem) {
+                        result = FormController.template(dataItem, 'sms');
+                        return result;
+                        },
+                        title:"{{ 'grid.sms'|trans({}, 'ets') }}",
+                        width: 40,
+                        hidden: !window.userSmsRights        
+                    },{
+                        field: "Name",
+                        width:140,
+                        title: "{{ 'grid.name'|trans({}, 'ets') }}"
+                    },{
+                        field: "checkInDate",
+                        title: "{{ 'grid.check-in'|trans({}, 'ets') }}",
+                        width: 140,
+                        template: function(dataItem) {
+                            return kendo.htmlEncode(dataItem.checkInDay+ " "+dataItem.checkInDate);
+                        }
+                    },{
+                        field: "checkOutDate",
+                        title: "{{ 'grid.check-out'|trans({}, 'ets') }}",
+                        width: 140,
+                        template: function(dataItem) {
+                            return kendo.htmlEncode(dataItem.checkOutDay+ " "+dataItem.checkOutDate);
+                        }
+                    }, {
+                        field: "Country",
+                        width:140,
+                        title: "{{ 'grid.country'|trans({}, 'ets') }}"
+                     }, {
+
+                        field: "City",
+                        width:80,
+                        title: "{{ 'grid.city'|trans({}, 'ets') }}"
+                    }, {
+                        field: "HotelDetails",
+                        title: "{{ 'grid.hotel-details'|trans({}, 'ets') }}"
+                    }, {
+                        field: "countryCity",
+                        title: "countryCity"
+                        ,hidden: true
+                    }
+                ]
+            });
+       
+    });
+  
+</script>
+</div>  

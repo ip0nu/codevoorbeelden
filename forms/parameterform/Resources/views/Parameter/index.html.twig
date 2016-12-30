@@ -1,0 +1,99 @@
+{% extends ':layout:navigation.html.twig' %}
+
+{% block grid %}
+    <div class="row">
+        <div class="gridheader left">
+            <div class="col-md-12 no-pad-left no-pad-right icon-customization">
+                Edit products
+            </div>
+        </div>
+    </div>
+    
+    <form id="ManageParameter" name="ManageParameter">
+        <div class="row">
+            <div class="form-group col-md-12">
+                <p class="bg-info margin-bottom-20" id="message"></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 form-group">
+                <select id="products" name="products" class="input-big form-control">
+                    <option>Select product</option>
+                    {% for Product in Products %}
+                    <option value="{{ Product.getId }}">{{Product.getName  }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6 form-group" id="2"></div>
+        </div>
+        <div class="row margin-bottom-20" id="3"></div>
+        <div class="row">
+            <div class="col-md-12 form-group">
+                <button type="submit" id="submit" class="btnAction icon-submit pull-right">Save</button>
+            </div>
+        </div>
+    </form>
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(document).ready(function() {
+    $("#products").kendoDropDownList();
+    
+    $("#message, #submit, #3").hide();
+    
+    $(function() {
+        $('#products').change(function () {
+            var id = $('#products option:selected').val();
+            var url = '{{ path('make_Parameters_selectbox_By_Product_Id') }}';
+
+            $.ajax({
+                url: url,
+                data: {'id': id},
+                success: function (result) {
+                    document.getElementById('2').innerHTML = result;
+                    document.getElementById('application').focus();
+                    $("#application").kendoDropDownList();
+                }
+            });
+        });
+        $('#2').change(function () {
+            var id = $('#2 option:selected').val();
+            var url = '{{ path('make_Configuration_Inputform_By_Parameter_Id') }}';
+
+            $.ajax({
+                url: url,
+                data: {'id': id},
+                success: function (result) {
+                    $("#submit, #3").show();
+                    document.getElementById('3').innerHTML = result;
+                }
+            });
+        });
+
+        $("#ManageParameter").submit(function (event) {
+            event.preventDefault();
+            var data = $(this).serializeArray();
+            var   js_id = document.getElementById('id').value;
+            var url = "{{ path("store_update", {"entity": "Parameter"}) }}";
+
+
+           // url = url.replace("js_id", js_id);
+
+
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: data,
+                success: function (result) {
+                    var obj = JSON.parse(result);
+                    $("#message").show();
+                    document.getElementById('message').innerText= obj.message;
+                }
+            });
+        })
+    })
+});
+</script>
+{% endblock %}

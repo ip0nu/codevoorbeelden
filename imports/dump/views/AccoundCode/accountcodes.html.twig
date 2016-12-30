@@ -1,0 +1,125 @@
+{% extends 'AtpiManagementBundle::navigation.html.twig' %}
+
+{% block body %}
+
+<div  class="form-group">
+    <label for="select" class="col-lg-2 control-label">{{ 'MidOfficeID'|trans({}, 'admin')|capitalize }}</label>
+    <div class="col-lg-10">
+        <select class="form-control" id="option">
+            <script>var MidOfficeIDs= []; </script>
+            <option value='0'>---choice option---</option>
+            {% for item in MidOfficeIDs %}
+                <script> MidOfficeIDs.push("{{ item.name }}") </script>
+                <option value="{{ item.id }} ">
+                    {{ item.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<div id="table">
+    <div class="col-md-12 col-sm-12 col-lg-12">
+        <div class="row">
+            <table class="table table-striped table-hover" >
+                <thead>
+                <tr class="column">
+                    <th>{{'account_name'|trans({}, 'admin')|capitalize}}</th>
+                    <th >{{'accountcode'|trans({}, 'admin')|capitalize}}</th>
+                    <!--th class="delete hidden-xs"></th-->
+                </tr>
+                </thead>
+                <tbody>
+                {% for code in codes %}
+                <tr>
+                    <td><a href="{{ path('atpi_management_accountcode', {id: code.id}) }}">{{ code.name|e }}</a></td>
+                    <td class="hidden-xs">{{ code.accountcode }}</td>
+                    <!--td class="hidden-xs">
+                        <a data-id="{{code.id}}" data-name="{{code.name}}" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#deleteCode"><i class="fa fa-remove fa-wf"></i></a>
+                    </td-->
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td class="columnbottom" colspan="3">
+                        {% if showEtsSyncButton %}
+                            <a href="{{ path('atpi_management_getcodesfromets') }}" class="btn btn-primary" style="float:right;">{{ 'get_codes_from_ets_database'|trans({}, 'admin')|capitalize }}</a>
+                        {% endif %}
+                    </td>
+                    <!--td class="columnbottom" align="right">
+                        <a href="{{ path('atpi_management_addaccountcode') }}" class="btn btn-primary">
+                            <i class="fa fa-plus fa-wf"></i> {{ 'add_accountcode'|trans({}, 'admin') }}
+                        </a>
+                    </td-->
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% include 'AtpiManagementBundle:includes:paginator.html.twig' %}
+</div>
+
+
+    <!-- deleteCode -->
+<div class="modal fade" id="deleteCode" tabindex="-1" role="dialog" aria-labelledby="deleteCode">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+          <h4 class="modal-title" id="exampleModalLabel">New message</h4>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+        <a id="linkIdDelete"><button type="button" class="btn btn-primary">Yes</button></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+
+    $(function() {
+
+        $('#searchSubmit').prop('disabled', true);
+        document.querySelector('form').onkeypress = checkEnter;
+
+        function checkEnter(e){
+            e = e || event;
+            var txtArea = /textarea/i.test((e.target || e.srcElement).tagName);
+            return txtArea || (e.keyCode || e.which || e.charCode || 0) !== 13;
+        }
+
+        $('#navsearchstring,#option').on('propertychange input', function() {
+
+            var e = document.getElementById("option");
+            var MidOfficeID = e.options[e.selectedIndex].value;
+            var searchString = document.getElementById("navsearchstring").value;
+            var data = {midOfficeIDs: MidOfficeID, navsearchstring: searchString, page: '{{ page }}'};
+
+            $.ajax({
+                url: '{{ path('atpi_management_accountcodes') }}'
+                , method: 'POST'
+                , dataType: 'json'
+                , data: data
+                , success: function (response) {
+                    document.getElementById("table").innerHTML = response.template;
+
+                    }
+                });
+            })
+
+       document.getElementById("navsearchstring").value ='{{ searchString }}';
+        var selectBox =  document.getElementById('option');
+        for (var i = 0; i < selectBox.options.length; i++) {
+            if(selectBox.options[i].value =={{ option }})
+            {
+                selectBox.options[i].selected = true;
+                break;
+            };
+        }
+    });
+
+</script>
+
+{% endblock %}

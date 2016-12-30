@@ -1,0 +1,17 @@
+{% if fields is iterable %}
+    {% for key,field in fields %}
+        {% if field is iterable %}
+            {% for key, value in field %}
+                <div class="col-md-4 form-group" {% if key == 'id' %}hidden{% endif %}>
+                    <label>{{key }}</label>
+                    <input type="text" id="{{ key }}" value="{{ value }}" name="{{key }}" class="input-big form-control" />
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+
+
+
+

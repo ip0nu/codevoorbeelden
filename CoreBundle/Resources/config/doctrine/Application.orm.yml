@@ -1,0 +1,35 @@
+#src/Core/Resources/config/doctrine/Application.orm.yml
+CoreBundle\Entity\Application:
+    type: entity
+    table: core_application
+    id:
+      id:
+          type: integer
+          generator: { strategy: AUTO }
+    fields:
+      name:
+          type: string
+          length: 254
+          unique: true
+      uniqueApplicationGuid:
+            type: string
+            length: 100
+            unique: true
+    oneToMany:
+      parameters:
+        targetEntity: Parameter
+        mappedBy: application
+        cascade: ["persist"]
+      configurations:
+        targetEntity: Configuration
+        mappedBy: application
+        cascade: ["persist"]
+    manyToMany:
+      users:
+        targetEntity: User
+        mappedBy: applications
+        cascade: ["persist"]
+      products:
+        targetEntity: Product
+        mappedBy: applications
+        cascade: ["persist"]

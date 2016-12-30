@@ -1,0 +1,26 @@
+#src/Core/Resources/config/doctrine/UserRelation.orm.yml
+CoreBundle\Entity\UserRelation:
+    type: entity
+    table: core_user_relation
+    id:
+        id:
+            type: integer
+            generator: { strategy: AUTO }
+    manyToOne:
+        parent:
+            targetEntity: User
+            inversedBy: parents
+            cascade: ["persist"]
+            joinColumn:
+                name: parent
+                referencedColumnName: id
+        child:
+            targetEntity: User
+            inversedBy: childs
+            cascade: ["persist"]
+            joinColumn:
+                name: child
+                referencedColumnName: id
+
+
+

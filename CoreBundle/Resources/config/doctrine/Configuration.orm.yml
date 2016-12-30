@@ -1,0 +1,33 @@
+#src/Core/Resources/config/doctrine/Configuration.orm.yml
+CoreBundle\Entity\Configuration:
+    type: entity
+    table: core_configuration
+    id:
+      id:
+          type: integer
+          generator: { strategy: AUTO }
+    fields:
+      value:
+          type: text
+    manyToOne:
+      user:
+        targetEntity: User
+        inversedBy: configurations
+        cascade: ["persist"]
+        joinColumn:
+          name: user_id
+          referencedColumnName: id
+      parameter:
+        targetEntity: Parameter
+        inversedBy: configurations
+        cascade: ["persist"]
+        joinColumn:
+          name: parameter_id
+          referencedColumnName: id
+      application:
+        targetEntity: Application
+        inversedBy: configurations
+        cascade: ["persist"]
+        joinColumn:
+          name: application_id
+          referencedColumnName: id

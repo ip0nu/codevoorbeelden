@@ -1,0 +1,29 @@
+#src/Core/Resources/config/doctrine/Product.orm.yml
+CoreBundle\Entity\Product:
+    type: entity
+    table: core_product
+    id:
+      id:
+        type: integer
+        generator: { strategy: AUTO }
+    fields:
+      name:
+        type: string
+        length: 100
+      uniqueProductGuid:
+        type: string
+        length: 100
+        unique: true
+    manyToMany:
+      applications:
+        targetEntity: Application
+        inversedBy: products
+        cascade: ["persist"]
+        joinTable:
+          name: core_application_products
+          joinColumns:
+           product_id:
+              referencedColumnName: id
+          inverseJoinColumns:
+            application_id:
+              referencedColumnName: id
